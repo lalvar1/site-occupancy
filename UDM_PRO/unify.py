@@ -57,5 +57,5 @@ class API(object):
             b = self.request(f'/proxy/network/api/s/{self.site}/stat/sta')
             data = b.json()['data']
             return data
-        except:
+        except Exception as e:
             logging.error(f'Error while getting data from controller: {e}')

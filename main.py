@@ -24,7 +24,7 @@ DEST_TABLE_SCHEMA = {'name': 'user', 'type': 'STRING', 'mode': 'REQUIRED'}, \
                     {'name': 'spent', 'type': 'FLOAT', 'mode': 'NULLABLE'}, \
                     {'name': 'date', 'type': 'DATE', 'mode': 'REQUIRED'}, \
                     {'name': 'uuid', 'type': 'STRING', 'mode': 'REQUIRED'}
-DEST_JSON_FILE = f'./bq_user_updates.json'
+DEST_JSON_FILE = './bq_user_updates.json'
 
 logging.basicConfig(filename='automation.log', level=logging.DEBUG,
                     format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')

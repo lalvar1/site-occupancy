@@ -76,8 +76,7 @@ class API(object):
         :return: A list of clients on the format of a dict
         """
 
-        r = self._session.get("{}/api/s/{}/stat/sta".format(self._baseurl, self._site, verify=self._verify_ssl),
-                              data="json={}")
+        r = self._session.get("{}/api/s/{}/stat/sta".format(self._baseurl, self._site), data="json={}")
         self._current_status_code = r.status_code
 
         if self._current_status_code == 401:
