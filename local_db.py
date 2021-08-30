@@ -3,10 +3,12 @@ import logging
 
 
 class SQLite:
+    """Simple class to backup data in local SQLite"""
     def __init__(self):
         self.db_name = 'local.db'
 
     def load_local_db(self, row_values):
+        """Loads multiple rows """
         try:
             con = sqlite3.connect(self.db_name)
             cur = con.cursor()
@@ -20,6 +22,7 @@ class SQLite:
             logging.error(f'Error while running query: {e}')
 
     def run_query(self, query, commit=False):
+        """Run SQL query"""
         try:
             con = sqlite3.connect(self.db_name)
             cur = con.cursor()
@@ -34,6 +37,7 @@ class SQLite:
             logging.error(f'Error while running query: {e}')
 
     def create_table(self):
+        """Initial DB creation"""
         try:
             con = sqlite3.connect(self.db_name)
             cur = con.cursor()
