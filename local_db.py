@@ -1,0 +1,48 @@
+import sqlite3
+import logging
+
+
+class SQLite:
+    def __init__(self):
+        self.db_name = 'local.db'
+
+    def load_local_db(self, row_values):
+        try:
+            con = sqlite3.connect(self.db_name)
+            cur = con.cursor()
+            logging.info('Loading local db')
+            query = "INSERT INTO local (user, spent, date, uuid) VALUES (?,?,?,?)"
+            cur.executemany(query, row_values)
+            # logging.warning(f'Committing values: {values}')
+            con.commit()
+            # con.close()
+        except Exception as e:
+            logging.error(f'Error while running query: {e}')
+
+    def run_query(self, query, commit=False):
+        try:
+            con = sqlite3.connect(self.db_name)
+            cur = con.cursor()
+            logging.info(f'Running query: {query}')
+            result = cur.execute(query)
+            if commit:
+                logging.warning(f'Committing values: {query}')
+                con.commit()
+            # con.close()
+            return result
+        except Exception as e:
+            logging.error(f'Error while running query: {e}')
+
+    def create_table(self):
+        try:
+            con = sqlite3.connect(self.db_name)
+            cur = con.cursor()
+            logging.info(f'Creating Table {self.db_name}')
+            cur.execute('''CREATE TABLE local
+                           (user text, spent real, date text, uuid text)''')
+            # cur.execute(f'''CREATE TABLE {name}
+            #                {fields}''')
+            logging.info(f'Table {self.db_name} Created')
+            con.close()
+        except Exception as e:
+            logging.error(f'Failed creating table {self.db_name}. Error: {e}')
