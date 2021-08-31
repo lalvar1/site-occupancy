@@ -20,7 +20,7 @@ class API(object):
     def __enter__(self):
         """
         Contextmanager entry handle
-        :return: isntance object of class
+        :return: instance object of class
         """
         self.login()
         return self
