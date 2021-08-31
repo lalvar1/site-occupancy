@@ -4,13 +4,13 @@ import os
 import json
 import uuid
 import urllib3
+from math import ceil
 from dotenv import load_dotenv
 from cloud.big_query import BigQueryProcessor
 from local_db import SQLite
 import UDM.unify as controller
 # import UDM_PRO.unify as controller
 
-# BCN --> UDM_PRO
 
 load_dotenv()
 urllib3.disable_warnings()
@@ -19,9 +19,9 @@ UNIFI_PWD = os.environ['PASSWORD']
 SVC_ACCOUNT = './svc_account_occupancy.json'
 DEST_PROJECT_ID = 'fenix-occupancy-data-server'
 DEST_DATASET_ID = 'site_occupancy'
-DEST_TABLE_ID = 'bcn-occupancy'
+DEST_TABLE_ID = 'bcn'
 DEST_TABLE_SCHEMA = {'name': 'user', 'type': 'STRING', 'mode': 'REQUIRED'}, \
-                    {'name': 'spent', 'type': 'FLOAT', 'mode': 'NULLABLE'}, \
+                    {'name': 'spent', 'type': 'INTEGER', 'mode': 'NULLABLE'}, \
                     {'name': 'date', 'type': 'DATE', 'mode': 'REQUIRED'}, \
                     {'name': 'uuid', 'type': 'STRING', 'mode': 'REQUIRED'}
 DEST_JSON_FILE = './bq_user_updates.json'
@@ -77,14 +77,21 @@ class OccupancyServer:
             device_list = (api.list_clients(order_by="ip"))
         users_data = {}
         for client in device_list:
-            clean_data = {
-                client['hostname']:
-                    {
-                    'spent': str((client['last_seen'] - client['assoc_time']) / 60),
-                    'date': datetime.today().strftime('%Y-%m-%d')
+            if 'hostname' in client:
+                hostname = client['hostname'].upper()
+                excluded = ['IPHONE', 'GALAXY', 'SAMSUNG', 'ONEPLUS', 'HUB', 'RASBERRYPI', 'NUKI_BRIDGE_201F6482',
+                            'FENIX-BCN-PRINTER', 'DESKTOP', 'XIAOMI']
+                is_excluded = any(device in hostname for device in excluded)
+                if is_excluded:
+                    continue
+                clean_data = {
+                    client['hostname']:
+                        {
+                        'spent': ceil((client['last_seen'] - client['assoc_time']) / 60),
+                        'date': datetime.today().strftime('%Y-%m-%d')
+                    }
                 }
-            }
-            users_data.update(clean_data)
+                users_data.update(clean_data)
         self.unifi_stats = users_data
 
 
@@ -98,16 +105,6 @@ if __name__ == "__main__":
     logging.info('Starting Job...')
     server = OccupancyServer()
     server.get_unify_data()
-    # server.unify_stats = {
-    #         "luciano": {
-    #             "spent": 7.2,
-    #             "date": "2021-08-19"
-    #         },
-    #         "lucio": {
-    #             "spent": 8.2,
-    #             "date": "2021-08-19"
-    #         }
-    #     }
     server.load_status_file()
     # result = runner.run_query('select * from local')
     # for row in result:
