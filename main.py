@@ -22,9 +22,9 @@ DEST_TABLE_SCHEMA = {'name': 'user', 'type': 'STRING', 'mode': 'REQUIRED'}, \
                     {'name': 'spent', 'type': 'INTEGER', 'mode': 'NULLABLE'}, \
                     {'name': 'date', 'type': 'DATE', 'mode': 'REQUIRED'}, \
                     {'name': 'uuid', 'type': 'STRING', 'mode': 'REQUIRED'}
-SVC_ACCOUNT = './files/svc_account_occupancy.json'
-DEST_JSON_FILE = './files/bq_user_updates.json'
-DAILY_STATS_FILE = './files/daily_stats.json'
+SVC_ACCOUNT = f'{os.path.dirname(os.path.realpath(__file__))}/files/svc_account_occupancy.json'
+DEST_JSON_FILE = f'{os.path.dirname(os.path.realpath(__file__))}/files/bq_user_updates.json'
+DAILY_STATS_FILE = f'{os.path.dirname(os.path.realpath(__file__))}/files/daily_stats.json'
 
 logging.basicConfig(filename='automation.log', level=logging.DEBUG,
                     format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
