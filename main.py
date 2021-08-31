@@ -76,7 +76,7 @@ class OccupancyServer:
         with controller.API(username=UNIFI_USER, password=UNIFI_PWD) as api:
             device_list = (api.list_clients(order_by="ip"))
         users_data = {}
-        excluded = ['IPHONE', 'GALAXY', 'SAMSUNG', 'ONEPLUS', 'HUB', 'RASBERRYPI', 'NUKI_BRIDGE_201F6482',
+        excluded = ['IPHONE', 'GALAXY', 'SAMSUNG', 'ONEPLUS', 'HUB', 'RASPBERRYPI', 'NUKI_BRIDGE_201F6482',
                     'FENIX-BCN-PRINTER', 'DESKTOP', 'XIAOMI']
         for client in device_list:
             if 'hostname' in client:
