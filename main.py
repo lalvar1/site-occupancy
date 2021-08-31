@@ -7,7 +7,7 @@ import urllib3
 from math import ceil
 from dotenv import load_dotenv
 from cloud.big_query import BigQueryProcessor
-from local_db import SQLite
+from local_db.local_db import SQLite
 import UDM.unify as controller
 # import UDM_PRO.unify as controller
 
