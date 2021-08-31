@@ -56,6 +56,11 @@ class OccupancyServer:
         f.close()
         logging.info("JSON file updated")
 
+    def restart_daily_stats(self):
+        with open(self.daily_stats_file, 'w') as f:
+            f.write(json.dumps({}, indent=4))
+        f.close()
+
     def get_sql_rows(self):
         """Get formatted SQL rows"""
         rows = [(key, *list(values.values()), str(uuid.uuid4())) for key, values in self.current_stats.items()]
@@ -109,13 +114,14 @@ if __name__ == "__main__":
     # result = runner.run_query('select * from local')
     # for row in result:
     #     print(row)
-    if datetime.today().hour >= 19:
+    if datetime.today().hour == 19 and datetime.today().minute > 40:  # last cron job is at 19:45
         bq_values = server.get_biq_query_rows()
+        values = server.get_sql_rows()
+        server.restart_daily_stats()
         bq_runner = BigQueryProcessor(SVC_ACCOUNT, DEST_PROJECT_ID, DEST_DATASET_ID,
                                       DEST_TABLE_ID, DEST_TABLE_SCHEMA, DEST_JSON_FILE)
         bq_runner.create_json_newline_delimited_file(bq_values)
         bq_runner.load_data_from_file()
-        values = server.get_sql_rows()
         db_runner = SQLite()
         db_runner.load_local_db(values)
     logging.info('Successfully finished Job!')
