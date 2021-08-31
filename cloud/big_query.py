@@ -3,6 +3,8 @@ import os
 import logging
 import json
 
+logging.getLogger("bigquery").setLevel(logging.WARNING)
+
 
 class BigQueryProcessor:
     def __init__(self, svc_account_path, project_id, dataset_id, dest_table, dest_table_schema, dest_json_file):
