@@ -4,7 +4,6 @@ import logging
 
 UNIFI_LOGIN_PATH = '/api/auth/login'
 urllib3.disable_warnings()
-logging.getLogger("requests").setLevel(logging.WARNING)
 
 
 class API(object):
@@ -16,6 +15,7 @@ class API(object):
         self.password = password
         self.session = requests.Session()
         self.csrf = ""
+        logging.getLogger("requests").setLevel(logging.INFO)
 
     def __enter__(self):
         """
@@ -25,6 +25,21 @@ class API(object):
         self.login()
         return self
 
+    def __exit__(self, *args, **kwargs):
+        """
+        Log user out
+        :return: none
+        """
+        self.logout()
+
+    def logout(self):
+        """
+        Log the user out
+        :return: None
+        """
+        self.request("/logout", method='GET')
+        self.session.close()
+
     def login(self):
         payload = {
             "username": self.username,
@@ -32,25 +47,26 @@ class API(object):
         }
         r = self.request(UNIFI_LOGIN_PATH, payload)
         if r.status_code != 200:
-            raise logging.error("Failed to log in to API with provided credentials")
-        print(r.status_code)
+            logging.error("Failed to log in to API with provided credentials")
+            raise Exception('Auth Error')
         return r.ok
 
     def request(self, path, data={}, method='POST'):
-        """Make http request to specified endpoint"""
         uri = 'https://{}{}'.format(self.host, path)
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json; charset=utf-8",
         }
+
         if self.csrf:
             headers["X-CSRF-Token"] = self.csrf
+
+        r = getattr(self.session, method.lower())(uri, json=data, verify=False, headers=headers)
         try:
-            r = getattr(self.session, method.lower())(uri, json=data, verify=False, headers=headers)
             self.csrf = r.headers['X-CSRF-Token']
-            return r
         except KeyError:
             pass
+        return r
 
     def list_clients(self):
         """Get list of all active clients"""

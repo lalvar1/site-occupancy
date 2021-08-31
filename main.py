@@ -8,13 +8,13 @@ from math import ceil
 from dotenv import load_dotenv
 from cloud.big_query import BigQueryProcessor
 from local_db.local_db import SQLite
-import UDM.unify as controller
-# import UDM_PRO.unify as controller
+# import UDM.unify as controller
+import UDM_PRO.unify as controller
 
-load_dotenv()
+load_dotenv(f'{os.path.dirname(os.path.realpath(__file__))}/.env')
 urllib3.disable_warnings()
-UNIFI_USER = os.environ['USERNAME']
-UNIFI_PWD = os.environ['PASSWORD']
+UNIFI_USER = os.getenv('USERNAME')
+UNIFI_PWD = os.getenv('PASSWORD')
 DEST_PROJECT_ID = 'fenix-occupancy-data-server'
 DEST_DATASET_ID = 'site_occupancy'
 DEST_TABLE_ID = 'bcn'
@@ -26,7 +26,7 @@ SVC_ACCOUNT = f'{os.path.dirname(os.path.realpath(__file__))}/files/svc_account_
 DEST_JSON_FILE = f'{os.path.dirname(os.path.realpath(__file__))}/files/bq_user_updates.json'
 DAILY_STATS_FILE = f'{os.path.dirname(os.path.realpath(__file__))}/files/daily_stats.json'
 
-logging.basicConfig(filename='automation.log', level=logging.DEBUG,
+logging.basicConfig(filename='automation.log', level=logging.INFO,
                     format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 
@@ -36,7 +36,6 @@ class OccupancyServer:
     Unify Controller and updates daily user metrics
     """
     def __init__(self):
-        self.unify_host = 'https://unifi:8443'
         self.daily_stats_file = DAILY_STATS_FILE
         self.current_stats = self.get_users_file_data()
         self.unifi_stats = {}
@@ -74,7 +73,7 @@ class OccupancyServer:
     def get_unify_data(self):
         """Gets clients list for unifi controller and sets usage metrics per host/device"""
         with controller.API(username=UNIFI_USER, password=UNIFI_PWD) as api:
-            device_list = (api.list_clients(order_by="ip"))
+            device_list = api.list_clients()
         users_data = {}
         excluded = ['IPHONE', 'GALAXY', 'SAMSUNG', 'ONEPLUS', 'HUB', 'RASPBERRYPI', 'NUKI_BRIDGE_201F6482',
                     'FENIX-BCN-PRINTER', 'DESKTOP', 'XIAOMI']
@@ -103,6 +102,7 @@ def initial_setup():
 
 if __name__ == "__main__":
     logging.info('Starting Job...')
+    # initial_setup()
     server = OccupancyServer()
     server.get_unify_data()
     server.load_status_file()
@@ -110,12 +110,12 @@ if __name__ == "__main__":
     # for row in result:
     #     print(row)
     if datetime.today().hour >= 19:
-        values = server.get_sql_rows()
-        db_runner = SQLite()
-        db_runner.load_local_db(values)
         bq_values = server.get_biq_query_rows()
         bq_runner = BigQueryProcessor(SVC_ACCOUNT, DEST_PROJECT_ID, DEST_DATASET_ID,
                                       DEST_TABLE_ID, DEST_TABLE_SCHEMA, DEST_JSON_FILE)
         bq_runner.create_json_newline_delimited_file(bq_values)
         bq_runner.load_data_from_file()
+        values = server.get_sql_rows()
+        db_runner = SQLite()
+        db_runner.load_local_db(values)
     logging.info('Successfully finished Job!')
