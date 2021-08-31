@@ -11,6 +11,7 @@ __pycache__/
 
 # Svc account and releated data
 *.json
+files/
 
 # Distribution / packaging
 .Python

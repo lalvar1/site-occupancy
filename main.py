@@ -11,12 +11,10 @@ from local_db.local_db import SQLite
 import UDM.unify as controller
 # import UDM_PRO.unify as controller
 
-
 load_dotenv()
 urllib3.disable_warnings()
 UNIFI_USER = os.environ['USERNAME']
 UNIFI_PWD = os.environ['PASSWORD']
-SVC_ACCOUNT = './svc_account_occupancy.json'
 DEST_PROJECT_ID = 'fenix-occupancy-data-server'
 DEST_DATASET_ID = 'site_occupancy'
 DEST_TABLE_ID = 'bcn'
@@ -24,7 +22,9 @@ DEST_TABLE_SCHEMA = {'name': 'user', 'type': 'STRING', 'mode': 'REQUIRED'}, \
                     {'name': 'spent', 'type': 'INTEGER', 'mode': 'NULLABLE'}, \
                     {'name': 'date', 'type': 'DATE', 'mode': 'REQUIRED'}, \
                     {'name': 'uuid', 'type': 'STRING', 'mode': 'REQUIRED'}
-DEST_JSON_FILE = './bq_user_updates.json'
+SVC_ACCOUNT = './files/svc_account_occupancy.json'
+DEST_JSON_FILE = './files/bq_user_updates.json'
+DAILY_STATS_FILE = './files/daily_stats.json'
 
 logging.basicConfig(filename='automation.log', level=logging.DEBUG,
                     format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -37,7 +37,7 @@ class OccupancyServer:
     """
     def __init__(self):
         self.unify_host = 'https://unifi:8443'
-        self.daily_stats_file = './daily_stats.json'
+        self.daily_stats_file = DAILY_STATS_FILE
         self.current_stats = self.get_users_file_data()
         self.unifi_stats = {}
 
