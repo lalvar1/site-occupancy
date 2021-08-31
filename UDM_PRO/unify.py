@@ -4,6 +4,7 @@ import logging
 
 UNIFI_LOGIN_PATH = '/api/auth/login'
 urllib3.disable_warnings()
+logging.getLogger("requests").setLevel(logging.WARNING)
 
 
 class API(object):

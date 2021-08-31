@@ -2,6 +2,9 @@ from requests import Session
 import json
 import re
 from typing import Pattern, Dict, Union
+import logging
+
+logging.getLogger("requests").setLevel(logging.WARNING)
 
 
 class LoggedInException(Exception):
