@@ -58,6 +58,19 @@ class OccupancyServer:
         """Updates local file based on current and unifi stats"""
         logging.info("Updating daily stats data...")
         for user, data in self.unifi_stats.items():
+            if user in self.current_stats:
+                for mac, time in data.items():
+                    self.current_stats[user][mac] += time
+            else:
+                self.current_stats[user] = data
+        with open(self.daily_stats_file, 'w') as f:
+            f.write(json.dumps(self.current_stats, indent=4))
+        f.close()
+        # logging.info("JSON file updated")
+
+    def join_user_data(self):
+        """Join MACs data from users over different APs"""
+        for user, data in self.current_stats.items():
             self.current_stats[user] = {
                 "spent": sum(data.values()),
                 "date": datetime.today().strftime('%Y-%m-%d')
@@ -65,7 +78,6 @@ class OccupancyServer:
         with open(self.daily_stats_file, 'w') as f:
             f.write(json.dumps(self.current_stats, indent=4))
         f.close()
-        # logging.info("JSON file updated")
 
     def restart_daily_stats(self):
         with open(self.daily_stats_file, 'w') as f:
@@ -124,6 +136,7 @@ if __name__ == "__main__":
     # for row in result:
     #     print(row)
     if datetime.today().hour == 19 and datetime.today().minute >= 45:
+        server.join_user_data()
         bq_values = server.get_biq_query_rows()
         values = server.get_sql_rows()
         server.restart_daily_stats()
