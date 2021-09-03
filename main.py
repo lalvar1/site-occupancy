@@ -12,7 +12,7 @@ from local_db.local_db import SQLite
 import UDM_PRO.unify as controller
 import sys
 
-script_path =os.path.dirname(os.path.realpath(__file__))
+script_path = os.path.dirname(os.path.realpath(__file__))
 load_dotenv(f'{script_path}/.env')
 urllib3.disable_warnings()
 UNIFI_USER = os.getenv('USERNAME')
@@ -43,6 +43,7 @@ class OccupancyServer:
     Periodically queries users occupancy from
     Unify Controller and updates daily user metrics
     """
+
     def __init__(self):
         self.daily_stats_file = DAILY_STATS_FILE
         self.current_stats = self.get_users_file_data()
@@ -57,12 +58,12 @@ class OccupancyServer:
     def load_status_file(self):
         """Updates local file based on current and unifi stats"""
         logging.info("Updating daily stats data...")
-        for user, data in self.unifi_stats.items():
+        for user, unifi_data in self.unifi_stats.items():
             if user in self.current_stats:
-                for mac, time in data.items():
-                    self.current_stats[user][mac] += time
+                for mac, time in unifi_data.items():
+                    self.current_stats[user][mac] = time
             else:
-                self.current_stats[user] = data
+                self.current_stats[user] = unifi_data
         with open(self.daily_stats_file, 'w') as f:
             f.write(json.dumps(self.current_stats, indent=4))
         f.close()
@@ -112,7 +113,7 @@ class OccupancyServer:
                 if is_excluded:
                     continue
                 clean_data = {
-                    client['hostname']:{
+                    client['hostname']: {
                         client['ap_mac']: ceil((client['last_seen'] - client['assoc_time']) / 60)
                     }
                 }
@@ -127,24 +128,27 @@ def initial_setup():
 
 
 if __name__ == "__main__":
-    # logging.info('Starting Job...')
-    # initial_setup()
-    server = OccupancyServer()
-    server.get_unify_data()
-    server.load_status_file()
-    # result = runner.run_query('select * from local')
-    # for row in result:
-    #     print(row)
-    if datetime.today().hour == 19 and datetime.today().minute >= 45:
-        server.join_user_data()
-        bq_values = server.get_biq_query_rows()
-        values = server.get_sql_rows()
-        server.restart_daily_stats()
-        bq_runner = BigQueryProcessor(SVC_ACCOUNT, DEST_PROJECT_ID, DEST_DATASET_ID,
-                                      DEST_TABLE_ID, DEST_TABLE_SCHEMA, DEST_JSON_FILE)
-        bq_runner.create_json_newline_delimited_file(bq_values)
-        logging.info(f'Values: {bq_values}')
-        bq_runner.load_data_from_file()
-        db_runner = SQLite()
-        db_runner.load_local_db(values)
-    logging.info('Successfully finished Job!')
+    try:
+        # logging.info('Starting Job...')
+        # initial_setup()
+        server = OccupancyServer()
+        server.get_unify_data()
+        server.load_status_file()
+        # result = runner.run_query('select * from local')
+        # for row in result:
+        #     print(row)
+        if datetime.today().hour == 19 and datetime.today().minute >= 45:
+            server.join_user_data()
+            bq_values = server.get_biq_query_rows()
+            values = server.get_sql_rows()
+            server.restart_daily_stats()
+            bq_runner = BigQueryProcessor(SVC_ACCOUNT, DEST_PROJECT_ID, DEST_DATASET_ID,
+                                          DEST_TABLE_ID, DEST_TABLE_SCHEMA, DEST_JSON_FILE)
+            bq_runner.create_json_newline_delimited_file(bq_values)
+            logging.info(f'Values: {bq_values}')
+            bq_runner.load_data_from_file()
+            db_runner = SQLite()
+            db_runner.load_local_db(values)
+        logging.info('Successfully finished Job')
+    except Exception as e:
+        logging.error(f'Error on cron job: {e}')
