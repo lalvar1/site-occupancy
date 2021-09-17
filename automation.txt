@@ -1,5 +1,0 @@
-09/08/2021 10:41:19 AM Running query: select * from local
-09/08/2021 10:41:19 AM Error while running query: no such table: local
-09/08/2021 10:41:48 AM Creating Table local.db
-09/08/2021 10:41:48 AM Table local.db Created
-09/08/2021 10:41:48 AM Running query: select * from local
