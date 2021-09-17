@@ -48,13 +48,12 @@ class BigQueryProcessor:
         :return: None
         """
         try:
-            logging.info("Loading data into BigQuery...")
+            # logging.info("Loading data into BigQuery...")
             job_config = bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
                                                 schema=self.dest_table_schema)
             job_config.ignore_unknown_values = True
             with open(self.dest_json_file, "rb") as source_file:
                 job = self.client.load_table_from_file(source_file, self.table_id, job_config=job_config)
-            print(job.result(), job.output_rows)
             logging.info("Loaded {} rows into {}.".format(job.output_rows, self.table_id))
         except Exception as e:
             logging.error(f"Error loading data to BigQuery. Error was: {e}")

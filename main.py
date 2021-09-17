@@ -57,7 +57,7 @@ class OccupancyServer:
 
     def load_status_file(self):
         """Updates local file based on current and unifi stats"""
-        logging.info("Updating daily stats data...")
+        # logging.info("Updating daily stats data...")
         for user, unifi_data in self.unifi_stats.items():
             if user in self.current_stats:
                 for mac, time in unifi_data.items():
@@ -105,7 +105,7 @@ class OccupancyServer:
             device_list = api.list_clients()
         users_data = {}
         excluded = ['IPHONE', 'GALAXY', 'SAMSUNG', 'ONEPLUS', 'HUB', 'RASPBERRYPI', 'NUKI_BRIDGE_201F6482',
-                    'FENIX-BCN-PRINTER', 'DESKTOP', 'XIAOMI', 'POCOPHON']
+                    'FENIX-BCN-PRINTER', 'DESKTOP', 'XIAOMI', 'POCOPHON', 'MI8', 'IFONTANA']
         for client in device_list:
             if 'hostname' in client and 'ap_mac' in client:
                 hostname = client['hostname'].upper()
@@ -114,7 +114,7 @@ class OccupancyServer:
                     continue
                 clean_data = {
                     client['hostname']: {
-                        client['ap_mac']: ceil((client['last_seen'] - client['assoc_time']) / 60)
+                        client['ap_mac']: ceil((client['last_seen'] - client['latest_assoc_time']) / 60)
                     }
                 }
                 users_data.update(clean_data)
@@ -131,12 +131,13 @@ if __name__ == "__main__":
     try:
         # logging.info('Starting Job...')
         # initial_setup()
-        server = OccupancyServer()
-        server.get_unify_data()
-        server.load_status_file()
+        # runner = SQLite()
         # result = runner.run_query('select * from local')
         # for row in result:
         #     print(row)
+        server = OccupancyServer()
+        server.get_unify_data()
+        server.load_status_file()
         if datetime.today().hour == 19 and datetime.today().minute >= 45:
             server.join_user_data()
             bq_values = server.get_biq_query_rows()
@@ -149,6 +150,6 @@ if __name__ == "__main__":
             bq_runner.load_data_from_file()
             db_runner = SQLite()
             db_runner.load_local_db(values)
-        logging.info('Successfully finished Job')
+            logging.info('Successfully finished Job')
     except Exception as e:
         logging.error(f'Error on cron job: {e}')

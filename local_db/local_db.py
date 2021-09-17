@@ -1,11 +1,13 @@
 import sqlite3
 import logging
+import os
 
+module_path = os.path.dirname(os.path.realpath(__file__))
 
 class SQLite:
     """Simple class to backup data in local SQLite"""
     def __init__(self):
-        self.db_name = 'local.db'
+        self.db_name = f'{module_path}/local.db'
 
     def load_local_db(self, row_values):
         """Loads multiple rows """
@@ -17,7 +19,7 @@ class SQLite:
             cur.executemany(query, row_values)
             # logging.warning(f'Committing values: {values}')
             con.commit()
-            # con.close()
+            con.close()
         except Exception as e:
             logging.error(f'Error while running query: {e}')
 
