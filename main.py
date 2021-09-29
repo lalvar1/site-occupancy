@@ -4,22 +4,30 @@ import os
 import json
 import uuid
 import urllib3
+import sys
 from math import ceil
 from dotenv import load_dotenv
 from cloud.big_query import BigQueryProcessor
 from local_db.local_db import SQLite
-# import UDM.unify as controller
-import UDM_PRO.unify as controller
-import sys
+from users.Airtable import Airtable
+
+SITE = 'bcn'
+if SITE == 'bcn':
+    import UDM_PRO.unify as controller
+else:
+    import UDM.unify as controller
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 load_dotenv(f'{script_path}/.env')
 urllib3.disable_warnings()
 UNIFI_USER = os.getenv('USERNAME')
 UNIFI_PWD = os.getenv('PASSWORD')
+AIRTABLE_API_KEY = os.getenv('AIRTABLE_API_KEY')
+AIRTABLE_TABLE_NAME = os.getenv('AIRTABLE_TABLE_NAME')
+AIRTABLE_BASE_ID = os.getenv('AIRTABLE_BASE_ID')
 DEST_PROJECT_ID = 'fenix-occupancy-data-server'
 DEST_DATASET_ID = 'site_occupancy'
-DEST_TABLE_ID = 'bcn'
+DEST_TABLE_ID = SITE
 DEST_TABLE_SCHEMA = {'name': 'user', 'type': 'STRING', 'mode': 'REQUIRED'}, \
                     {'name': 'spent', 'type': 'INTEGER', 'mode': 'NULLABLE'}, \
                     {'name': 'date', 'type': 'DATE', 'mode': 'REQUIRED'}, \
@@ -80,6 +88,28 @@ class OccupancyServer:
             f.write(json.dumps(self.current_stats, indent=4))
         f.close()
 
+    def update_site_users(self):
+        """Clean up user list for Airtable table users"""
+        airtable = Airtable(AIRTABLE_API_KEY, AIRTABLE_TABLE_NAME, AIRTABLE_BASE_ID)
+        airtable_users = airtable.get_users()
+        user_stats = {}
+        online_hostnames = list(self.current_stats.keys())
+        for airtable_user, data in airtable_users.items():
+            if data['location'] != SITE:
+                continue
+            if airtable_user in online_hostnames:
+                user = {data['full_name']: self.current_stats[airtable_user]}
+            else:
+                user = {
+                    data['full_name']:
+                        {
+                            "spent": 0,
+                            "date": datetime.today().strftime('%Y-%m-%d')
+                        }
+                    }
+            user_stats.update(user)
+        self.current_stats = user_stats
+
     def restart_daily_stats(self):
         with open(self.daily_stats_file, 'w') as f:
             f.write(json.dumps({}, indent=4))
@@ -104,8 +134,8 @@ class OccupancyServer:
         with controller.API(username=UNIFI_USER, password=UNIFI_PWD) as api:
             device_list = api.list_clients()
         users_data = {}
-        excluded = ['IPHONE', 'GALAXY', 'SAMSUNG', 'ONEPLUS', 'HUB', 'RASPBERRYPI', 'NUKI_BRIDGE_201F6482',
-                    'FENIX-BCN-PRINTER', 'DESKTOP', 'XIAOMI', 'POCOPHON', 'MI8', 'IFONTANA']
+        excluded = ['IPHONE', 'GALAXY', 'SAMSUNG', 'ONEPLUS', 'HUB', 'RASPBERRYPI', 'BRIDGE',
+                    'PRINTER', 'DESKTOP', 'XIAOMI', 'POCOPHON', 'MI8', 'APPLE']
         for client in device_list:
             if 'hostname' in client and 'ap_mac' in client:
                 hostname = client['hostname'].upper()
@@ -113,7 +143,7 @@ class OccupancyServer:
                 if is_excluded:
                     continue
                 clean_data = {
-                    client['hostname']: {
+                    hostname.lower(): {
                         client['ap_mac']: ceil((client['last_seen'] - client['latest_assoc_time']) / 60)
                     }
                 }
@@ -140,6 +170,7 @@ if __name__ == "__main__":
         server.load_status_file()
         if datetime.today().hour == 19 and datetime.today().minute >= 45:
             server.join_user_data()
+            server.update_site_users()
             bq_values = server.get_biq_query_rows()
             values = server.get_sql_rows()
             server.restart_daily_stats()
