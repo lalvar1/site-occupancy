@@ -95,7 +95,7 @@ class OccupancyServer:
         user_stats = {}
         online_hostnames = list(self.current_stats.keys())
         for airtable_user, data in airtable_users.items():
-            if data['location'] != SITE:
+            if data['location'] != SITE or data['remote']:
                 continue
             if airtable_user in online_hostnames:
                 user = {data['full_name']: self.current_stats[airtable_user]}

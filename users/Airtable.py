@@ -27,9 +27,10 @@ class Airtable:
             user_data = {
                     user['fields']['Username'].lower(): {
                         'full_name': user['fields']['Full Name'],
-                        'location': user['fields']['Geography'].lower()
+                        'location': user['fields']['Geography'].lower(),
+                        'remote': True if user['fields']['Managed accounts'].upper() == 'NO' else False
                     }
-                for user in user_response['records']}
+                    for user in user_response['records']}
             return user_data
         except Exception as e:
             logging.exception(f"Error while getting users from Airtable: {e}")
