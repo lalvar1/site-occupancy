@@ -28,7 +28,8 @@ class Airtable:
                     user['fields']['Username'].lower(): {
                         'full_name': user['fields']['Full Name'],
                         'location': user['fields']['Geography'].lower(),
-                        'remote': True if user['fields']['Managed accounts'].upper() == 'NO' else False
+                        'remote': True if 'Managed accounts' in user['fields']
+                                          and user['fields']['Managed accounts'].upper() == 'NO' else False
                     }
                     for user in user_response['records']}
             return user_data
