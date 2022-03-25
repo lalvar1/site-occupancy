@@ -184,3 +184,4 @@ if __name__ == "__main__":
             logging.info('Successfully finished Job')
     except Exception as e:
         logging.error(f'Error on cron job: {e}')
+        OccupancyServer().restart_daily_stats()

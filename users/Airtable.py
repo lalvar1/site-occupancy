@@ -31,7 +31,7 @@ class Airtable:
                         'remote': True if 'Managed accounts' in user['fields']
                                           and user['fields']['Managed accounts'].upper() == 'NO' else False
                     }
-                    for user in user_response['records']}
+                    for user in user_response['records'] if 'Username' in user['fields']}
             return user_data
         except Exception as e:
             logging.exception(f"Error while getting users from Airtable: {e}")
